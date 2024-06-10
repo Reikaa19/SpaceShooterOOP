@@ -1,0 +1,13 @@
+Todo:
+- Add 1 Enemy Ship with HP Spawning
+- Enable Enemy Ship Shooting
+- Fix Enemy movement
+- Enable Enemy to track player position
+- Add Player Weapon Change 
+- Add Player Engine Change
+- Add Main Menu
+- Add Pause option
+- Add Music and Sound Effect
+- Add HP Player
+- Add HP and Shield Upgrade
+- Add Looping Background
