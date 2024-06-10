@@ -61,7 +61,6 @@ public class MyGdxGame extends ApplicationAdapter {
         batch = new SpriteBatch();
 
         // rectangle player (untuk ambil koordinat nya)
-
         playerShip = new Rectangle();
         playerShip.x = 30;        // position
         playerShip.y = 30;
@@ -142,14 +141,6 @@ public class MyGdxGame extends ApplicationAdapter {
             playerShip.y = (int) (touchPos.y - 50 / 2);
         }
 
-        // movement with keyboard
-//        if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
-//            bucket.x -= 200 * Gdx.graphics.getDeltaTime();
-//        }
-//        if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
-//            bucket.x += 200 * Gdx.graphics.getDeltaTime();
-//        }
-
         // bucket logic (movement berhenti di batas window)
         if (playerShip.x < 0) playerShip.x = 0;
         if (playerShip.x > 600 - 64) playerShip.x = 600 - 64;
@@ -162,9 +153,8 @@ public class MyGdxGame extends ApplicationAdapter {
         }
 
         if (TimeUtils.nanoTime() - lastUpTime > 150000000) {    // bulletshots spawn rate control
-            spawnBulletShot(playerShip.x + 7, playerShip.y + 40);
-            spawnBulletShot(playerShip.x + 43, playerShip.y + 40);
-
+            spawnBulletShot(playerShip.x - 1, playerShip.y + 40);
+            spawnBulletShot(playerShip.x + 35, playerShip.y + 40);
         }
 
         for (Array.ArrayIterator<Rectangle> iter = bulletDrops.iterator(); iter.hasNext(); ) {
@@ -184,7 +174,6 @@ public class MyGdxGame extends ApplicationAdapter {
             bulletshot.y += 1000 * Gdx.graphics.getDeltaTime();        // logic bulletshot turun terus
 
             if (bulletshot.y + 20 > 900) iters.remove();                 // remove bulletshot di atas layar
-
         }
 
     }
