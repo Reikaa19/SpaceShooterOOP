@@ -44,8 +44,12 @@ public class MyGdxGame extends ApplicationAdapter {
         // image asset initialization
         dropBullet = new Texture((Gdx.files.internal("Bullet-down-small.gif")));
         upBullet = new Texture((Gdx.files.internal("Bullet-up-small.gif")));
+
+
+
         imgPlayer = new Texture((Gdx.files.internal("PlayerShip.png")));
         AutoCannon = new Texture((Gdx.files.internal("Auto Cannon.gif")));
+
 
         // sound asset initialization
 //		dropSound = Gdx.audio.newSound(Gdx.files.internal("drop.wav"));
