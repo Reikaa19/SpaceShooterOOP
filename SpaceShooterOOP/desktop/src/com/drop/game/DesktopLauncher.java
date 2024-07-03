@@ -14,7 +14,7 @@ public class DesktopLauncher {
 		Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
 
 		// display fps
-		config.setForegroundFPS(60);
+		config.setForegroundFPS(120);
 
 		// set window name
 		config.setTitle("Space Shooter");
