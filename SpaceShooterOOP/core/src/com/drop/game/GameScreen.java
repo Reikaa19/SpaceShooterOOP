@@ -28,6 +28,8 @@ public class GameScreen implements Screen {
     private Bullet scoutBullet;
     private long lastDropTime, lastUpTime;
     private int temp;
+    private float savedPlayerX;
+    private float savedPlayerY;
 
     // Object pools
     private Pool<Bullet> bulletPool = Pools.get(Bullet.class);
@@ -236,8 +238,11 @@ public class GameScreen implements Screen {
             deadCheck(scout2);
         }
 
-        if (player.getHp() == 0) {
+        if (player.getHp() <= 0) {
             System.out.println("Game Over");
+            game.setScreen(new GameOverScreen(game));
+            dispose();
+
         }
 
         // Spawn asset end
@@ -335,6 +340,13 @@ public class GameScreen implements Screen {
         if (TimeUtils.nanoTime() - lastDropTime > 500000000) {
             spawnBulletDrop(scout);
             spawnBulletDrop(scout2);
+        }
+
+        if (player.getHp() <= 0) {
+            System.out.println("Game Over");
+            game.setScreen(new GameOverScreen(game));
+            dispose();
+            return;
         }
 
         // Bullet movement
