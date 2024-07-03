@@ -8,6 +8,7 @@ public class Bullet extends Enemy{
     private float bulletVelocityY;
 
     public Bullet() {
+
     }
 
 
