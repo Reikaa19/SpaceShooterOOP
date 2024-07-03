@@ -1,9 +1,6 @@
 package com.drop.game;
 
-import com.badlogic.gdx.ApplicationAdapter;
-import com.badlogic.gdx.Game;
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -441,7 +438,9 @@ public class GameScreen implements Screen {
             spawnBulletShot(player.getHitbox().x - 1, player.getHitbox().y + 40);
             spawnBulletShot(player.getHitbox().x + 35, player.getHitbox().y + 40);
         }
-
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.setScreen(new PauseScreen(game));
+        }
         for (Array.ArrayIterator<Rectangle> iters = bulletShots.iterator(); iters.hasNext(); ) {
             Rectangle bulletshot = iters.next();
             bulletshot.y += 1000 * Gdx.graphics.getDeltaTime();

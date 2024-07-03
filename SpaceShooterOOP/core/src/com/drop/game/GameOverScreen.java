@@ -6,13 +6,13 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.drop.game.GameScreen;
 
 public class GameOverScreen extends ScreenAdapter {
     private final Game game;
     private final SpriteBatch batch;
     private final Texture gameOverTexture;
     private final Texture restartTexture;
+    private final Texture background;
     private final float gameOverX;
     private final float gameOverY;
     private final float restartX;
@@ -23,10 +23,12 @@ public class GameOverScreen extends ScreenAdapter {
         batch = new SpriteBatch();
         gameOverTexture = new Texture(Gdx.files.internal("GameOver.png"));
         restartTexture = new Texture(Gdx.files.internal("Restart.png"));
+        background = new Texture(Gdx.files.internal("space2.png"));
+
         gameOverX = 300 - gameOverTexture.getWidth() / 2;
         gameOverY = 500;
         restartX = 300 - restartTexture.getWidth() / 2;
-        restartY = 200;
+        restartY = 300;
     }
 
     @Override
@@ -35,6 +37,9 @@ public class GameOverScreen extends ScreenAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         batch.begin();
+        // Draw the background
+        batch.draw(background, 0, 0, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        // Draw the game over and restart textures
         batch.draw(gameOverTexture, gameOverX, gameOverY);
         batch.draw(restartTexture, restartX, restartY);
         batch.end();
@@ -56,5 +61,6 @@ public class GameOverScreen extends ScreenAdapter {
         batch.dispose();
         gameOverTexture.dispose();
         restartTexture.dispose();
+        background.dispose();
     }
 }

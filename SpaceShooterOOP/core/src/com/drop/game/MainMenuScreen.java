@@ -43,8 +43,8 @@ public class MainMenuScreen implements Screen {
         batch.begin();
         batch.draw(background, 0, 0, 600, 900);
         batch.draw(title, 300 - title.getWidth() / 2, 600 - title.getHeight() / 2);
-        batch.draw(playButton, 300 - playButton.getWidth() / 2, 450 - playButton.getHeight() / 2);
-        batch.draw(exitButton, 300 - exitButton.getWidth() / 2, 350 - exitButton.getHeight() / 2);
+        batch.draw(playButton, 300 - playButton.getWidth() / 2, 400 - playButton.getHeight() / 2);
+        batch.draw(exitButton, 300 - exitButton.getWidth() / 2, 300 - exitButton.getHeight() / 2);
         batch.end();
 
         if (Gdx.input.isTouched()) {
@@ -54,14 +54,14 @@ public class MainMenuScreen implements Screen {
 
             // Check if play button is touched
             if (touchPos.x > 300 - playButton.getWidth() / 2 && touchPos.x < 300 + playButton.getWidth() / 2 &&
-                    touchPos.y > 450 - playButton.getHeight() / 2 && touchPos.y < 450 + playButton.getHeight() / 2) {
+                    touchPos.y > 400 - playButton.getHeight() / 2 && touchPos.y < 400 + playButton.getHeight() / 2) {
                 game.setScreen(new GameScreen(game));
                 dispose();
             }
 
             // Check if exit button is touched
             if (touchPos.x > 300 - exitButton.getWidth() / 2 && touchPos.x < 300 + exitButton.getWidth() / 2 &&
-                    touchPos.y > 350 - exitButton.getHeight() / 2 && touchPos.y < 350 + exitButton.getHeight() / 2) {
+                    touchPos.y > 300 - exitButton.getHeight() / 2 && touchPos.y < 300 + exitButton.getHeight() / 2) {
                 Gdx.app.exit();
             }
         }
