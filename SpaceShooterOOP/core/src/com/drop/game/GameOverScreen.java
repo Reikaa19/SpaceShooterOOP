@@ -2,12 +2,12 @@ package com.drop.game;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.ScreenAdapter;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
-public class GameOverScreen extends ScreenAdapter {
+public class GameOverScreen implements Screen {
     private final Game game;
     private final SpriteBatch batch;
     private final Texture gameOverTexture;
@@ -29,6 +29,11 @@ public class GameOverScreen extends ScreenAdapter {
         gameOverY = 500;
         restartX = 300 - restartTexture.getWidth() / 2;
         restartY = 300;
+    }
+
+    @Override
+    public void show() {
+        // No additional actions required on show
     }
 
     @Override
@@ -57,7 +62,32 @@ public class GameOverScreen extends ScreenAdapter {
     }
 
     @Override
+    public void resize(int width, int height) {
+        // No additional actions required on resize
+    }
+
+    @Override
+    public void pause() {
+        // No additional actions required on pause
+    }
+
+    @Override
+    public void resume() {
+        // No additional actions required on resume
+    }
+
+    @Override
     public void hide() {
+        // Dispose of resources when the screen is hidden
+        batch.dispose();
+        gameOverTexture.dispose();
+        restartTexture.dispose();
+        background.dispose();
+    }
+
+    @Override
+    public void dispose() {
+        // Dispose of resources when the screen is destroyed
         batch.dispose();
         gameOverTexture.dispose();
         restartTexture.dispose();
