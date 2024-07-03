@@ -3,6 +3,7 @@ package com.drop.game;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -17,6 +18,8 @@ public class MainMenuScreen implements Screen {
     private Texture exitButton;
     private Texture title;
     private Texture background;
+    Sound sound;
+
 
     public MainMenuScreen(Game game) {
         this.game = game;
@@ -31,6 +34,7 @@ public class MainMenuScreen implements Screen {
         exitButton = new Texture(Gdx.files.internal("exit.png"));
         title = new Texture(Gdx.files.internal("title.png"));
         background = new Texture(Gdx.files.internal("space.jpg"));
+        sound = Gdx.audio.newSound(Gdx.files.internal("start.mp3"));
     }
 
     @Override
@@ -56,6 +60,7 @@ public class MainMenuScreen implements Screen {
             if (touchPos.x > 300 - playButton.getWidth() / 2 && touchPos.x < 300 + playButton.getWidth() / 2 &&
                     touchPos.y > 400 - playButton.getHeight() / 2 && touchPos.y < 400 + playButton.getHeight() / 2) {
                 game.setScreen(new GameScreen(game));
+                sound.play();
                 dispose();
             }
 

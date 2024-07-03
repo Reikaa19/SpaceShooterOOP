@@ -1,13 +1,18 @@
 package com.drop.game;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.*;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.drop.game.Bullet;
 import com.drop.game.Enemy;
 import com.drop.game.Player;
@@ -21,12 +26,18 @@ public class GameScreen implements Screen {
     private Array<Rectangle> bulletShots;
     private Array<Enemy> enemyDrops;
     private Player player;
-    private Enemy scout, scout2;
+    private Enemy scout, scout2,scout3;
     private Bullet scoutBullet;
     private long lastDropTime, lastUpTime;
     private int temp;
     private int yb1;
     private int yb2=3000;
+    private BitmapFont font;
+    private GlyphLayout layout;
+    Sound enemyKilled;
+    Sound playerHit;
+
+    private Music bgm;
 
     // Object pools
     private Pool<Bullet> bulletPool = Pools.get(Bullet.class);
@@ -90,12 +101,13 @@ public class GameScreen implements Screen {
         enemy.draw(batch);
     }
 
+    //todo : enemy movement
     private void enemyMoveShoot(Enemy enemy) {
         int randomX = MathUtils.random(0, 600 - 48);
-        if (enemy.getyCoord() == 0) {
+        if (enemy.getyCoord() ==-50) {
             enemyMove(enemy, randomX, 900, 48, 68);
         } else {
-            enemyMove(enemy, enemy.getxCoord(), enemy.getyCoord() - 1, 48, 68);
+            enemyMove(enemy, enemy.getxCoord(), enemy.getyCoord() - 2, 48, 68);
         }
     }
 
@@ -104,6 +116,7 @@ public class GameScreen implements Screen {
         if(enemy.getHp() < 0){
             enemyMove(enemy, randomX, 900, 48, 68);
             enemy.setHp(enemy.getMaxHp());
+            enemyKilled.play();
         }
     }
 
@@ -116,6 +129,14 @@ public class GameScreen implements Screen {
         Background1 = new Texture(Gdx.files.internal("Space_Background_7.png"));
         Background2 = new Texture(Gdx.files.internal("Space_Background_7.png"));
 
+        //Asset Sound
+        enemyKilled = Gdx.audio.newSound(Gdx.files.internal("enemyKilled.wav"));
+        playerHit = Gdx.audio.newSound(Gdx.files.internal("playerHit.wav"));
+
+        bgm = Gdx.audio.newMusic(Gdx.files.internal("bgmSS.mp3"));
+        bgm.setLooping(true);
+        bgm.play();
+
         // Initialize player entity
         player = new Player();
         player.setImgAsset("PlayerShip.png");
@@ -123,9 +144,12 @@ public class GameScreen implements Screen {
         player.setHp(20);
 
         // Initialize enemy entity
-        scout = new Enemy("Scout_Engine.gif", 300, 900, 48, 68, 5);
-        scout2 = new Enemy("Scout_Engine.gif", 150, 900, 48, 68, 5);
+        scout = new Enemy("Scout_Engine.gif", 100, 900, 48, 68, 5);
+        scout2 = new Enemy("Scout_Engine.gif", 450, 900, 48, 68, 5);
+        scout3 = new Enemy("Scout_Engine.gif", 250, 900, 48, 68, 5);
 
+        font = new BitmapFont();
+        layout = new GlyphLayout();
 
         // Create camera and sprite batch
         camera = new OrthographicCamera();
@@ -140,16 +164,26 @@ public class GameScreen implements Screen {
         // Spawn initial bullet
         spawnBulletDrop(scout);
         spawnBulletDrop(scout2);
+        spawnBulletDrop(scout3);
+
+        //Ukuran font
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("MinecraftTen-VGORe.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 36;  // Ubah ukuran sesuai kebutuhan
+        font = generator.generateFont(parameter);
+        generator.dispose();
+
+        layout = new GlyphLayout();
     }
 
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0.2f, 1);
         // Update player and enemy positions
-        player.hitboxCheck();
-        scout.hitboxCheck();
-        scout2.hitboxCheck();
-
+//        player.hitboxCheck();
+//        scout.hitboxCheck();
+//        scout2.hitboxCheck();
+//        scout3.hitboxCheck();
 
         camera.update();
         batch.setProjectionMatrix(camera.combined);
@@ -161,17 +195,28 @@ public class GameScreen implements Screen {
         lockToPlayer(scout2);
         scout2.setRotation(lockToPlayer(scout2) - 180);
 
+        lockToPlayer(scout3);
+        scout3.setRotation(lockToPlayer(scout3) - 180);
+
         // Spawn asset start
         batch.begin();
 
-        //show background
+        //todo :show background
         batch.draw(Background1,0,yb1);
-        yb1-=2;
+        yb1-=1;
         batch.draw(Background2,0,yb2);
-        yb2-=2;
+        yb2-=1;
         if (yb1 == -3000) yb1 = 3000;
         if (yb2 == -3000) yb2 = 3000;
 
+        //score dan hp
+        String scoreText = "Score: " + player.getScore();
+        String hpText = "HP: " + player.getHp();
+        layout.setText(font, scoreText);
+        font.draw(batch, scoreText, 10, 900 - layout.height - 10);  // Posisi untuk score di kiri atas
+
+        layout.setText(font, hpText);
+        font.draw(batch, hpText, 10, 900 - layout.height - 50);  // Posisi untuk HP di bawah score
         // Render player ship and basic gun
         batch.draw(AutoCannon, player.getHitbox().x - 13, player.getHitbox().y - 5);
         batch.draw(player.getImgAsset(), player.getHitbox().x - 8, player.getHitbox().y);
@@ -180,11 +225,13 @@ public class GameScreen implements Screen {
         if (TimeUtils.nanoTime() - lastDropTime > 500000000) {
             spawnBulletDrop(scout);
             spawnBulletDrop(scout2);
+            spawnBulletDrop(scout3);
         }
 
         if (player.getHp() <= 0) {
             System.out.println("Game Over");
             game.setScreen(new GameOverScreen(game));
+            bgm.stop();
             dispose();
             return;
         }
@@ -206,12 +253,14 @@ public class GameScreen implements Screen {
                 bulletDrops.removeIndex(i);
                 player.setHp(player.getHp() - 1);
                 System.out.println("Player hp: " + player.getHp());
+                playerHit.play();
             }
         }
 
         // Enemy movement
         enemyMoveShoot(scout);
         enemyMoveShoot(scout2);
+        enemyMoveShoot(scout3);
 
         // Player shooting logic
         for (Rectangle shot : bulletShots) {
@@ -220,7 +269,7 @@ public class GameScreen implements Screen {
             if (scout.getHitbox().overlaps(shot)) {
                 scout.setHp(scout.getHp() - 1);
                 if (scout.getHp() == 0) {
-                    player.setScore(player.getScore() + 1);
+                    player.setScore(player.getScore() + 10);
                     System.out.println("Score: " + player.getScore());
                 }
                 deadCheck(scout);
@@ -231,10 +280,20 @@ public class GameScreen implements Screen {
             if (scout2.getHitbox().overlaps(shot)) {
                 scout2.setHp(scout2.getHp() - 1);
                 if (scout2.getHp() == 0) {
-                    player.setScore(player.getScore() + 1);
+                    player.setScore(player.getScore() + 10);
                     System.out.println("Score: " + player.getScore());
                 }
                 deadCheck(scout2);
+                bulletShots.removeValue(shot, true); // Remove the bullet shot
+            }
+
+            if (scout3.getHitbox().overlaps(shot)) {
+                scout3.setHp(scout3.getHp() - 1);
+                if (scout3.getHp() == 0) {
+                    player.setScore(player.getScore() + 10);
+                    System.out.println("Score: " + player.getScore());
+                }
+                deadCheck(scout3);
                 bulletShots.removeValue(shot, true); // Remove the bullet shot
             }
         }
@@ -252,6 +311,13 @@ public class GameScreen implements Screen {
             System.out.println("Player hp: " + player.getHp());
             scout2.setHp(-1);
             deadCheck(scout2);
+        }
+
+        if (player.getHitbox().overlaps(scout3.getHitbox())) {
+            player.setHp(player.getHp() - scout3.getHp());
+            System.out.println("Player hp: " + player.getHp());
+            scout3.setHp(-1);
+            deadCheck(scout3);
         }
 
         if (player.getHp() == 0) {
@@ -283,9 +349,10 @@ public class GameScreen implements Screen {
         }
 
         //pause jika ditanya
-//        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-//            game.setScreen(new PauseScreen(game));
-//        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.setScreen(new PauseScreen(game));
+            bgm.pause();
+        }
         for (Array.ArrayIterator<Rectangle> iters = bulletShots.iterator(); iters.hasNext(); ) {
             Rectangle bulletshot = iters.next();
             bulletshot.y += 1000 * Gdx.graphics.getDeltaTime();

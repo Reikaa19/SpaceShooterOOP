@@ -3,6 +3,7 @@ package com.drop.game;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -15,6 +16,7 @@ public class PauseScreen implements Screen {
     private Texture playButton;
     private Texture pausedText;
     private OrthographicCamera camera;
+    private Music bgm;
 
     public PauseScreen(Game game) {
         this.game = game;
@@ -25,6 +27,7 @@ public class PauseScreen implements Screen {
         batch = new SpriteBatch();
         playButton = new Texture(Gdx.files.internal("play.png"));
         pausedText = new Texture(Gdx.files.internal("GamePaused.png"));
+        bgm = Gdx.audio.newMusic(Gdx.files.internal("bgmSS.mp3"));
         camera = new OrthographicCamera();
         camera.setToOrtho(false, 600, 900);
     }
