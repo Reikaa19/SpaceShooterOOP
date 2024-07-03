@@ -13,10 +13,27 @@ public class Entity {
     private Sprite image;
     private Rectangle hitbox;
 
-
+    private int hp;
+    private int MaxHp;
 
 
     public Entity() {
+    }
+
+    public int getMaxHp() {
+        return MaxHp;
+    }
+
+    public void setMaxHp(int maxHp) {
+        MaxHp = maxHp;
+    }
+
+    public int getHp() {
+        return hp;
+    }
+
+    public void setHp(int hp) {
+        this.hp = hp;
     }
 
     public int getxCoord() {
