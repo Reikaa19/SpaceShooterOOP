@@ -6,8 +6,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 
-import javax.net.ssl.SSLSession;
-
 public class Enemy extends Entity{
     public Enemy(){
     }
