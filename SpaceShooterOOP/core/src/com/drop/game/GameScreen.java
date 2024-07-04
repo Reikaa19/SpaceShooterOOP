@@ -21,7 +21,7 @@ public class GameScreen implements Screen {
     private Array<Rectangle> bulletShots;
     private Array<Enemy> enemyDrops;
     private Player player;
-    private Enemy scout, scout2;
+    private Enemy scout, scout2, scout3;
     private Bullet scoutBullet;
     private long lastDropTime, lastUpTime;
     private int temp;
@@ -92,10 +92,10 @@ public class GameScreen implements Screen {
 
     private void enemyMoveShoot(Enemy enemy) {
         int randomX = MathUtils.random(0, 600 - 48);
-        if (enemy.getyCoord() == 0) {
+        if (enemy.getyCoord() == -50) {
             enemyMove(enemy, randomX, 900, 48, 68);
         } else {
-            enemyMove(enemy, enemy.getxCoord(), enemy.getyCoord() - 1, 48, 68);
+            enemyMove(enemy, enemy.getxCoord(), enemy.getyCoord() - 2, 48, 68);
         }
     }
 
@@ -123,8 +123,9 @@ public class GameScreen implements Screen {
         player.setHp(20);
 
         // Initialize enemy entity
-        scout = new Enemy("Scout_Engine.gif", 300, 900, 48, 68, 5);
-        scout2 = new Enemy("Scout_Engine.gif", 150, 900, 48, 68, 5);
+        scout = new Enemy("Scout_Engine.gif", 100, 900, 48, 68, 5);
+        scout2 = new Enemy("Scout_Engine.gif", 450, 900, 48, 68, 5);
+        scout3 = new Enemy("Scout_Engine.gif", 250, 900, 48, 68, 5);
 
 
         // Create camera and sprite batch
@@ -140,16 +141,17 @@ public class GameScreen implements Screen {
         // Spawn initial bullet
         spawnBulletDrop(scout);
         spawnBulletDrop(scout2);
+        spawnBulletDrop(scout3);
     }
 
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0.2f, 1);
         // Update player and enemy positions
-        player.hitboxCheck();
-        scout.hitboxCheck();
-        scout2.hitboxCheck();
-
+//        player.hitboxCheck();
+//        scout.hitboxCheck();
+//        scout2.hitboxCheck();
+//        scout3.hitboxCheck();
 
         camera.update();
         batch.setProjectionMatrix(camera.combined);
@@ -161,14 +163,17 @@ public class GameScreen implements Screen {
         lockToPlayer(scout2);
         scout2.setRotation(lockToPlayer(scout2) - 180);
 
+        lockToPlayer(scout3);
+        scout3.setRotation(lockToPlayer(scout3) - 180);
+
         // Spawn asset start
         batch.begin();
 
         //show background
         batch.draw(Background1,0,yb1);
-        yb1-=2;
+        yb1-=1;
         batch.draw(Background2,0,yb2);
-        yb2-=2;
+        yb2-=1;
         if (yb1 == -3000) yb1 = 3000;
         if (yb2 == -3000) yb2 = 3000;
 
@@ -180,6 +185,7 @@ public class GameScreen implements Screen {
         if (TimeUtils.nanoTime() - lastDropTime > 500000000) {
             spawnBulletDrop(scout);
             spawnBulletDrop(scout2);
+            spawnBulletDrop(scout3);
         }
 
         if (player.getHp() <= 0) {
@@ -212,6 +218,8 @@ public class GameScreen implements Screen {
         // Enemy movement
         enemyMoveShoot(scout);
         enemyMoveShoot(scout2);
+        enemyMoveShoot(scout3);
+
 
         // Player shooting logic
         for (Rectangle shot : bulletShots) {
@@ -237,6 +245,15 @@ public class GameScreen implements Screen {
                 deadCheck(scout2);
                 bulletShots.removeValue(shot, true); // Remove the bullet shot
             }
+            if (scout3.getHitbox().overlaps(shot)) {
+                scout3.setHp(scout3.getHp() - 1);
+                if (scout3.getHp() == 0) {
+                    player.setScore(player.getScore() + 1);
+                    System.out.println("Score: " + player.getScore());
+                }
+                deadCheck(scout3);
+                bulletShots.removeValue(shot, true); // Remove the bullet shot
+            }
         }
 
         // enemy and player tubruk logic
@@ -252,6 +269,13 @@ public class GameScreen implements Screen {
             System.out.println("Player hp: " + player.getHp());
             scout2.setHp(-1);
             deadCheck(scout2);
+        }
+
+        if (player.getHitbox().overlaps(scout3.getHitbox())) {
+            player.setHp(player.getHp() - scout3.getHp());
+            System.out.println("Player hp: " + player.getHp());
+            scout3.setHp(-1);
+            deadCheck(scout3);
         }
 
         if (player.getHp() == 0) {
