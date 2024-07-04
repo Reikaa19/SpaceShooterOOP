@@ -1,32 +1,37 @@
 package com.drop.game;
 
 import com.badlogic.gdx.*;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.*;
-import com.drop.game.Bullet;
-import com.drop.game.Enemy;
-import com.drop.game.Player;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 
 public class GameScreen implements Screen {
     private final Game game;
     private SpriteBatch batch;
-    private Texture dropBullet, upBullet, AutoCannon,Background1,Background2;
+    private Texture dropBullet, bombBullet, upBullet, AutoCannon, Background1, Background2;
     private OrthographicCamera camera;
     private Array<Bullet> bulletDrops;
     private Array<Rectangle> bulletShots;
-    private Array<Enemy> enemyDrops;
     private Player player;
-    private Enemy scout, scout2, scout3;
-    private Bullet scoutBullet;
-    private long lastDropTime, lastUpTime;
-    private int temp;
+    private Enemy scout1, scout2, scout3, bomber1, bomber2;
+    private Bullet scoutBullet, bomberBullet;
+    private long lastDropBullet,lastDropBomb, lastUpTime;
     private int yb1;
-    private int yb2=3000;
+    private int yb2 = 3000;
+    private BitmapFont font;
+    private GlyphLayout layout;
+    Sound enemyKilled, playerHit;
+    private Music bgm;
 
     // Object pools
     private Pool<Bullet> bulletPool = Pools.get(Bullet.class);
@@ -36,41 +41,32 @@ public class GameScreen implements Screen {
         this.game = game;
     }
 
-    private int lockToPlayer(Enemy enemy) {
-        double test = Math.atan2(enemy.getxCoord() - player.getxCoord() + 2, enemy.getyCoord() - player.getyCoord() + 2);
-        int angle = (int) Math.toDegrees(test) * -1;
-        return angle;
-    }
-
-    private int middleX(Enemy enemy) {
-        return (int) enemy.getImage().getX() + enemy.getImage().getRegionWidth() / 2;
-    }
-
-    private int middleY(Enemy enemy) {
-        return (int) enemy.getImage().getY() + enemy.getImage().getRegionHeight() / 2;
-    }
-
-    private void spawnBulletDrop(Enemy enemy) {
+    private void spawnBulletDrop(Enemy enemy, Bullet myBullet, int angle) {
         Bullet bullet = bulletPool.obtain();
-        bullet.setImgAsset("Bullet-down-small.gif");
-        bullet.setHitbox(middleX(enemy) - 5, middleY(enemy) - 5, 10, 10);
-        bullet.setImage(10, 16);
-        bullet.setPosition(middleX(enemy) - 5, middleY(enemy) - 5);
+        bullet.setImgAsset(String.valueOf(myBullet.getImgAsset()));
+        bullet.setHitbox(enemy.getMiddleX() - (int) myBullet.getImage().getWidth()/2, enemy.getMiddleY() , (int) myBullet.getImage().getWidth(), (int) myBullet.getImage().getHeight());
+        bullet.setImage((int) myBullet.getImage().getWidth(), (int) myBullet.getImage().getHeight());
+        bullet.setPosition(enemy.getMiddleX(), enemy.getMiddleY());
+        bullet.setDamage(myBullet.getDamage());
 
-        int angle = lockToPlayer(enemy);
         bullet.setAngle(angle);
         bullet.setRotation(bullet.getAngle());
 
-        int speed = 300;
         float radian = (float) Math.toRadians(angle - 90);
-        bullet.setBulletVelocityX((float) Math.cos(radian) * speed);
-        bullet.setBulletVelocityY((float) Math.sin(radian) * speed);
+        bullet.setBulletVelocityX((float) Math.cos(radian) * myBullet.getSpeed());
+        bullet.setBulletVelocityY((float) Math.sin(radian) * myBullet.getSpeed());
 
-        bullet.setBulletX(middleX(enemy) - 5);
-        bullet.setBulletY(middleY(enemy) - 5);
+        bullet.setBulletX(enemy.getMiddleX() - 5);
+        bullet.setBulletY(enemy.getMiddleY() - 5);
 
         bulletDrops.add(bullet);
-        lastDropTime = TimeUtils.nanoTime();
+
+        // Update lastDropTime for bomber enemies
+        if (enemy instanceof Bomber) {
+            lastDropBomb = TimeUtils.nanoTime();
+        } else if (enemy instanceof Scout) {
+            lastDropBullet = TimeUtils.nanoTime();
+        }
     }
 
     private void spawnBulletShot(float shotX, float shotY) {
@@ -84,49 +80,43 @@ public class GameScreen implements Screen {
         lastUpTime = TimeUtils.nanoTime();
     }
 
-    private void enemyMove(Enemy enemy, int x, int y, int width, int height) {
-        enemy.setPosition(x, y);
-        enemy.setHitbox(x, y, width, height);
-        enemy.draw(batch);
-    }
-
-    private void enemyMoveShoot(Enemy enemy) {
-        int randomX = MathUtils.random(0, 600 - 48);
-        if (enemy.getyCoord() == -50) {
-            enemyMove(enemy, randomX, 900, 48, 68);
-        } else {
-            enemyMove(enemy, enemy.getxCoord(), enemy.getyCoord() - 2, 48, 68);
-        }
-    }
-
-    private void deadCheck(Enemy enemy){
-        int randomX = MathUtils.random(0, 600 - 48);
-        if(enemy.getHp() < 0){
-            enemyMove(enemy, randomX, 900, 48, 68);
-            enemy.setHp(enemy.getMaxHp());
-        }
-    }
-
     @Override
     public void show() {
-        // Initialize assets
+        // Initialize asset
         dropBullet = new Texture(Gdx.files.internal("Bullet-down-small.gif"));
+        bombBullet = new Texture(Gdx.files.internal("Bullet-Bomb.gif"));
         upBullet = new Texture(Gdx.files.internal("Bullet-up-small.gif"));
         AutoCannon = new Texture(Gdx.files.internal("Auto Cannon.gif"));
+
+        // Background Asset
         Background1 = new Texture(Gdx.files.internal("Space_Background_7.png"));
         Background2 = new Texture(Gdx.files.internal("Space_Background_7.png"));
 
+        // Sound Sfx Asset
+        enemyKilled = Gdx.audio.newSound(Gdx.files.internal("enemyKilled.wav"));
+        playerHit = Gdx.audio.newSound(Gdx.files.internal("playerHit.wav"));
+
+        // Music Asset
+        bgm = Gdx.audio.newMusic(Gdx.files.internal("bgmSS.mp3"));
+        bgm.setLooping(true);
+        bgm.play();
+
         // Initialize player entity
-        player = new Player();
-        player.setImgAsset("PlayerShip.png");
-        player.setHitbox(30, 30, 45, 45);
-        player.setHp(20);
+        player = new Player("PlayerShip.png", 30, 30, 45, 45, 20);
 
         // Initialize enemy entity
-        scout = new Enemy("Scout_Engine.gif", 100, 900, 48, 68, 5);
-        scout2 = new Enemy("Scout_Engine.gif", 450, 900, 48, 68, 5);
-        scout3 = new Enemy("Scout_Engine.gif", 250, 900, 48, 68, 5);
+        scout1 = new Scout("Scout_Engine.gif", 75 - 24, 900);
+        scout2 = new Scout("Scout_Engine.gif", 525 - 24, 900);
+        scout3 = new Scout("Scout_Engine.gif", 300 - 24, 900);
 
+        bomber1 = new Bomber("Frigate_Engine.gif", 180 - 42, 900);
+        bomber2 = new Bomber("Frigate_Engine.gif", 420 - 42, 900);
+
+        scoutBullet = new scoutBullet();
+        bomberBullet = new bomberBullet();
+
+        font = new BitmapFont();
+        layout = new GlyphLayout();
 
         // Create camera and sprite batch
         camera = new OrthographicCamera();
@@ -136,63 +126,87 @@ public class GameScreen implements Screen {
         // Initialize arrays
         bulletDrops = new Array<>();
         bulletShots = new Array<>();
-        enemyDrops = new Array<>();
 
         // Spawn initial bullet
-        spawnBulletDrop(scout);
-        spawnBulletDrop(scout2);
-        spawnBulletDrop(scout3);
+//        spawnBulletDrop(bomber1,bomberBullet,0);
+//        spawnBulletDrop(bomber2,bomberBullet,0);
+//        spawnBulletDrop(scout1,scoutBullet,scout1.lockToPlayer(player));
+//        spawnBulletDrop(scout2,scoutBullet,scout2.lockToPlayer(player));
+//        spawnBulletDrop(scout3,scoutBullet,scout3.lockToPlayer(player));
+
+
+        //Ukuran font
+        FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("MinecraftTen-VGORe.ttf"));
+        FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        parameter.size = 36;  // Ubah ukuran sesuai kebutuhan
+        font = generator.generateFont(parameter);
+        generator.dispose();
+
+        layout = new GlyphLayout();
     }
+
+    public void enemyHitCheck(Enemy enemy, Rectangle shot) {
+        if (enemy.getHitbox().overlaps(shot)) {
+            enemy.setHp(enemy.getHp() - 1);
+            if (enemy.getHp() <= 0) {
+                player.setScore(player.getScore() + 10);
+                System.out.println("Score: " + player.getScore());
+                enemy.deadCheck(batch, enemyKilled);
+            }
+            bulletShots.removeValue(shot, true); // Remove bullet yg kena
+        }
+    }
+
+    public void collusionCheck(Enemy enemy) {
+        if (player.getHitbox().overlaps(enemy.getHitbox())) {
+            player.setHp(player.getHp() - enemy.getHp());
+            System.out.println("Player hp: " + player.getHp());
+            enemy.setHp(0);
+            enemy.deadCheck(batch, enemyKilled);
+        }
+    }
+
 
     @Override
     public void render(float delta) {
         ScreenUtils.clear(0, 0, 0.2f, 1);
-        // Update player and enemy positions
-//        player.hitboxCheck();
-//        scout.hitboxCheck();
-//        scout2.hitboxCheck();
-//        scout3.hitboxCheck();
 
         camera.update();
         batch.setProjectionMatrix(camera.combined);
 
-        // Player Tracker
-        lockToPlayer(scout);
-        scout.setRotation(lockToPlayer(scout) - 180);
-
-        lockToPlayer(scout2);
-        scout2.setRotation(lockToPlayer(scout2) - 180);
-
-        lockToPlayer(scout3);
-        scout3.setRotation(lockToPlayer(scout3) - 180);
+        // Enemy Track Location Player
+        scout1.setRotation(scout1.lockToPlayer(player) - 180);
+        scout2.setRotation(scout2.lockToPlayer(player) - 180);
+        scout3.setRotation(scout3.lockToPlayer(player) - 180);
 
         // Spawn asset start
         batch.begin();
 
-        //show background
-        batch.draw(Background1,0,yb1);
-        yb1-=1;
-        batch.draw(Background2,0,yb2);
-        yb2-=1;
+        //todo : background looping logic
+        batch.draw(Background1, 0, yb1);
+        yb1 -= 1;
+        batch.draw(Background2, 0, yb2);
+        yb2 -= 1;
         if (yb1 == -3000) yb1 = 3000;
         if (yb2 == -3000) yb2 = 3000;
 
-        // Render player ship and basic gun
+        // score dan hp display
+        String scoreText = "Score: " + player.getScore();
+        String hpText = "HP: " + player.getHp();
+        layout.setText(font, scoreText);
+        font.draw(batch, scoreText, 10, 900 - layout.height - 10);  // Posisi untuk score di kiri atas
+
+        layout.setText(font, hpText);
+        font.draw(batch, hpText, 10, 900 - layout.height - 50);  // Posisi untuk HP di bawah score
+
+        // Display player ship and auto cannon
         batch.draw(AutoCannon, player.getHitbox().x - 13, player.getHitbox().y - 5);
         batch.draw(player.getImgAsset(), player.getHitbox().x - 8, player.getHitbox().y);
 
-        // Bullet drop fire rate logic
-        if (TimeUtils.nanoTime() - lastDropTime > 500000000) {
-            spawnBulletDrop(scout);
-            spawnBulletDrop(scout2);
-            spawnBulletDrop(scout3);
-        }
-
-        if (player.getHp() <= 0) {
-            System.out.println("Game Over");
-            game.setScreen(new GameOverScreen(game));
-            dispose();
-            return;
+        // Bomber Bullet drop fire rate 2 sec 2e+9
+        if (TimeUtils.nanoTime() - lastDropBomb > 2e+9) {
+            spawnBulletDrop(bomber1, bomberBullet, 0);
+            spawnBulletDrop(bomber2, bomberBullet, 0);
         }
 
         // Bullet movement
@@ -204,86 +218,75 @@ public class GameScreen implements Screen {
             int x = (int) bullet.getBulletX();
             int y = (int) bullet.getBulletY();
 
-            enemyMove(bullet, x, y, 10, 15);
+            bullet.enemyMove(batch, x, y, (int) bullet.getHitbox().getWidth(), (int) bullet.getHitbox().getHeight());
+
 
             if (bullet.getyCoord() + 20 < 0) bulletDrops.removeIndex(i);
 
             if (bullet.getHitbox().overlaps(player.getHitbox())) {
                 bulletDrops.removeIndex(i);
-                player.setHp(player.getHp() - 1);
+                player.setHp(player.getHp() - bullet.getDamage());
                 System.out.println("Player hp: " + player.getHp());
+                playerHit.play();
             }
         }
 
-        // Enemy movement
-        enemyMoveShoot(scout);
-        enemyMoveShoot(scout2);
-        enemyMoveShoot(scout3);
+        // Enemy bomber logic
+        bomber1.enemyMoveShoot(batch);
+        bomber2.enemyMoveShoot(batch);
+
+
+        // Scout Bullet drop fire rate 0.5 sec 500000000
+        if (TimeUtils.nanoTime() - lastDropBullet > 500000000) {
+            spawnBulletDrop(scout1, scoutBullet, scout1.lockToPlayer(player));
+            spawnBulletDrop(scout2, scoutBullet, scout2.lockToPlayer(player));
+            spawnBulletDrop(scout3, scoutBullet, scout3.lockToPlayer(player));
+        }
+
+        // Enemy scout  logic
+        scout1.enemyMoveShoot(batch);
+        scout2.enemyMoveShoot(batch);
+        scout3.enemyMoveShoot(batch);
 
 
         // Player shooting logic
         for (Rectangle shot : bulletShots) {
             batch.draw(upBullet, shot.x, shot.y);
 
-            if (scout.getHitbox().overlaps(shot)) {
-                scout.setHp(scout.getHp() - 1);
-                if (scout.getHp() == 0) {
-                    player.setScore(player.getScore() + 1);
-                    System.out.println("Score: " + player.getScore());
-                }
-                deadCheck(scout);
-
-
-                bulletShots.removeValue(shot, true); // Remove the bullet shot
-            }
-            if (scout2.getHitbox().overlaps(shot)) {
-                scout2.setHp(scout2.getHp() - 1);
-                if (scout2.getHp() == 0) {
-                    player.setScore(player.getScore() + 1);
-                    System.out.println("Score: " + player.getScore());
-                }
-                deadCheck(scout2);
-                bulletShots.removeValue(shot, true); // Remove the bullet shot
-            }
-            if (scout3.getHitbox().overlaps(shot)) {
-                scout3.setHp(scout3.getHp() - 1);
-                if (scout3.getHp() == 0) {
-                    player.setScore(player.getScore() + 1);
-                    System.out.println("Score: " + player.getScore());
-                }
-                deadCheck(scout3);
-                bulletShots.removeValue(shot, true); // Remove the bullet shot
-            }
+            enemyHitCheck(scout1, shot);
+            enemyHitCheck(scout2, shot);
+            enemyHitCheck(scout3, shot);
+            enemyHitCheck(bomber1, shot);
+            enemyHitCheck(bomber2, shot);
         }
+
 
         // enemy and player tubruk logic
-        if (player.getHitbox().overlaps(scout.getHitbox())) {
-            player.setHp(player.getHp() - scout.getHp());
-            System.out.println("Player hp: " + player.getHp());
-            scout.setHp(-1);
-            deadCheck(scout);
-        }
+        collusionCheck(scout1);
+        collusionCheck(scout2);
+        collusionCheck(scout3);
+        collusionCheck(bomber1);
+        collusionCheck(bomber2);
 
-        if (player.getHitbox().overlaps(scout2.getHitbox())) {
-            player.setHp(player.getHp() - scout2.getHp());
-            System.out.println("Player hp: " + player.getHp());
-            scout2.setHp(-1);
-            deadCheck(scout2);
-        }
 
-        if (player.getHitbox().overlaps(scout3.getHitbox())) {
-            player.setHp(player.getHp() - scout3.getHp());
-            System.out.println("Player hp: " + player.getHp());
-            scout3.setHp(-1);
-            deadCheck(scout3);
-        }
-
-        if (player.getHp() == 0) {
+        // Player dead logic
+        if (player.getHp() <= 0) {
             System.out.println("Game Over");
+            game.setScreen(new GameOverScreen(game));
+            bgm.stop();
+            dispose();
+            return;
         }
 
-        // Spawn asset end
-        batch.end();
+
+        // show hitbox (mempengaruhi display asset lain)
+//        player.hitboxCheck();
+//        scout1.hitboxCheck();
+//        scout2.hitboxCheck();
+//        scout3.hitboxCheck();
+//        bomber1.hitboxCheck();
+//        bomber2.hitboxCheck();
+
 
         // Player ship logic
         if (Gdx.input.isTouched()) {
@@ -307,15 +310,20 @@ public class GameScreen implements Screen {
         }
 
         //pause jika ditanya
-//        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-//            game.setScreen(new PauseScreen(game));
-//        }
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.setScreen(new PauseScreen(game));
+            bgm.pause();
+        }
+
         for (Array.ArrayIterator<Rectangle> iters = bulletShots.iterator(); iters.hasNext(); ) {
             Rectangle bulletshot = iters.next();
             bulletshot.y += 1000 * Gdx.graphics.getDeltaTime();
 
             if (bulletshot.y + 20 > 920) iters.remove();
         }
+
+        // Spawn asset end
+        batch.end();
     }
 
     @Override

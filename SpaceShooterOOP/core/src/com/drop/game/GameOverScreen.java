@@ -3,6 +3,7 @@ package com.drop.game;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -17,6 +18,7 @@ public class GameOverScreen implements Screen {
     private final float gameOverY;
     private final float restartX;
     private final float restartY;
+    Sound sound;
 
     public GameOverScreen(Game game) {
         this.game = game;
@@ -33,7 +35,7 @@ public class GameOverScreen implements Screen {
 
     @Override
     public void show() {
-        // No additional actions required on show
+        sound = Gdx.audio.newSound(Gdx.files.internal("start.mp3"));
     }
 
     @Override
@@ -57,6 +59,7 @@ public class GameOverScreen implements Screen {
             if (touchX >= restartX && touchX <= restartX + restartTexture.getWidth()
                     && touchY >= restartY && touchY <= restartY + restartTexture.getHeight()) {
                 game.setScreen(new GameScreen(game));
+                sound.play();
             }
         }
     }

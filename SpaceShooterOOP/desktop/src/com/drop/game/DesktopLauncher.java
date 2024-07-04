@@ -21,6 +21,7 @@ public class DesktopLauncher {
 
 		// set window size
 		config.setWindowedMode(600,900);
+		config.setResizable(false);
 
 		// window icon
 		config.setWindowIcon(Files.FileType.Internal, "PlayerShip.png");
