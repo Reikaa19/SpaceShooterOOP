@@ -3,6 +3,10 @@ package com.drop.game;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Array;
+
+import javax.net.ssl.SSLSession;
 
 public class Enemy extends Entity{
     public Enemy(){
@@ -15,6 +19,27 @@ public class Enemy extends Entity{
         this.setPosition(xCoord,yCoord);
         this.setMaxHp(hp);
         this.setHp(hp);
+    }
+
+    public void collusionCheck(Player player, Sound enemyKilled, SpriteBatch batch) {
+        if (player.getHitbox().overlaps(getHitbox())) {
+            player.setHp(player.getHp() - getHp());
+            System.out.println("Player hp: " + player.getHp());
+            setHp(0);
+            deadCheck(batch, enemyKilled);
+        }
+    }
+
+    public void enemyHitCheck(Player player, Rectangle shot, Sound enemyKilled, SpriteBatch batch, Array<Rectangle> bulletShots) {
+        if (getHitbox().overlaps(shot)) {
+            setHp(getHp() - 1);
+            if (getHp() <= 0) {
+                player.setScore(player.getScore() + 10);
+                System.out.println("Score: " + player.getScore());
+                deadCheck(batch, enemyKilled);
+            }
+            bulletShots.removeValue(shot, true); // Remove bullet yg kena
+        }
     }
 
     public int getMiddleX() {
@@ -30,8 +55,7 @@ public class Enemy extends Entity{
         return (int) Math.toDegrees(test) * -1;
     }
 
-    //todo : enemy movement
-
+    // todo : enemy movement
     public void enemyMove(SpriteBatch batch, int x, int y, int width, int height) {
         setPosition(x, y);
         setHitbox(x, y, width, height);
@@ -59,14 +83,14 @@ public class Enemy extends Entity{
 }
 
 class Scout extends Enemy{
-    public Scout(String imgAsset, int xCoord, int yCoord) {
-        super(imgAsset, xCoord, yCoord, 48, 68, 5);
+    public Scout(int xCoord) {
+        super("Scout_Engine.gif", xCoord - 24, 900, 48, 68, 5);
     }
 }
 
 class Bomber extends Enemy{
-    public Bomber(String imgAsset, int xCoord, int yCoord) {
-        super(imgAsset, xCoord, yCoord, 84, 92, 10);
+    public Bomber(int xCoord) {
+        super("Frigate_Engine.gif", xCoord - 42, 900, 84, 92, 10);
         setRotation(180);
     }
 

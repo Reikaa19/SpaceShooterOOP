@@ -1,5 +1,11 @@
 package com.drop.game;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.utils.Pool;
+import com.badlogic.gdx.utils.TimeUtils;
+
 public class Bullet extends Enemy {
     private int speed;
     private  int damage;

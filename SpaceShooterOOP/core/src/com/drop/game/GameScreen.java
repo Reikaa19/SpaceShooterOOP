@@ -18,7 +18,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 public class GameScreen implements Screen {
     private final Game game;
     private SpriteBatch batch;
-    private Texture dropBullet, bombBullet, upBullet, AutoCannon, Background1, Background2;
+    private Texture upBullet, AutoCannon, Background1, Background2;
     private OrthographicCamera camera;
     private Array<Bullet> bulletDrops;
     private Array<Rectangle> bulletShots;
@@ -41,50 +41,9 @@ public class GameScreen implements Screen {
         this.game = game;
     }
 
-    private void spawnBulletDrop(Enemy enemy, Bullet myBullet, int angle) {
-        Bullet bullet = bulletPool.obtain();
-        bullet.setImgAsset(String.valueOf(myBullet.getImgAsset()));
-        bullet.setHitbox(enemy.getMiddleX() - (int) myBullet.getImage().getWidth()/2, enemy.getMiddleY() , (int) myBullet.getImage().getWidth(), (int) myBullet.getImage().getHeight());
-        bullet.setImage((int) myBullet.getImage().getWidth(), (int) myBullet.getImage().getHeight());
-        bullet.setPosition(enemy.getMiddleX(), enemy.getMiddleY());
-        bullet.setDamage(myBullet.getDamage());
-
-        bullet.setAngle(angle);
-        bullet.setRotation(bullet.getAngle());
-
-        float radian = (float) Math.toRadians(angle - 90);
-        bullet.setBulletVelocityX((float) Math.cos(radian) * myBullet.getSpeed());
-        bullet.setBulletVelocityY((float) Math.sin(radian) * myBullet.getSpeed());
-
-        bullet.setBulletX(enemy.getMiddleX() - 5);
-        bullet.setBulletY(enemy.getMiddleY() - 5);
-
-        bulletDrops.add(bullet);
-
-        // Update lastDropTime for bomber enemies
-        if (enemy instanceof Bomber) {
-            lastDropBomb = TimeUtils.nanoTime();
-        } else if (enemy instanceof Scout) {
-            lastDropBullet = TimeUtils.nanoTime();
-        }
-    }
-
-    private void spawnBulletShot(float shotX, float shotY) {
-        Rectangle bulletShot = rectanglePool.obtain();
-        bulletShot.x = shotX;
-        bulletShot.y = shotY;
-        bulletShot.width = 10;
-        bulletShot.height = 10;
-
-        bulletShots.add(bulletShot);
-        lastUpTime = TimeUtils.nanoTime();
-    }
-
     @Override
     public void show() {
         // Initialize asset
-        dropBullet = new Texture(Gdx.files.internal("Bullet-down-small.gif"));
-        bombBullet = new Texture(Gdx.files.internal("Bullet-Bomb.gif"));
         upBullet = new Texture(Gdx.files.internal("Bullet-up-small.gif"));
         AutoCannon = new Texture(Gdx.files.internal("Auto Cannon.gif"));
 
@@ -102,15 +61,15 @@ public class GameScreen implements Screen {
         bgm.play();
 
         // Initialize player entity
-        player = new Player("PlayerShip.png", 30, 30, 45, 45, 20);
+        player = new Player();
 
         // Initialize enemy entity
-        scout1 = new Scout("Scout_Engine.gif", 75 - 24, 900);
-        scout2 = new Scout("Scout_Engine.gif", 525 - 24, 900);
-        scout3 = new Scout("Scout_Engine.gif", 300 - 24, 900);
+        scout1 = new Scout(75);
+        scout2 = new Scout(525);
+        scout3 = new Scout(300);
 
-        bomber1 = new Bomber("Frigate_Engine.gif", 180 - 42, 900);
-        bomber2 = new Bomber("Frigate_Engine.gif", 420 - 42, 900);
+        bomber1 = new Bomber(180);
+        bomber2 = new Bomber(420);
 
         scoutBullet = new scoutBullet();
         bomberBullet = new bomberBullet();
@@ -127,14 +86,6 @@ public class GameScreen implements Screen {
         bulletDrops = new Array<>();
         bulletShots = new Array<>();
 
-        // Spawn initial bullet
-//        spawnBulletDrop(bomber1,bomberBullet,0);
-//        spawnBulletDrop(bomber2,bomberBullet,0);
-//        spawnBulletDrop(scout1,scoutBullet,scout1.lockToPlayer(player));
-//        spawnBulletDrop(scout2,scoutBullet,scout2.lockToPlayer(player));
-//        spawnBulletDrop(scout3,scoutBullet,scout3.lockToPlayer(player));
-
-
         //Ukuran font
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("MinecraftTen-VGORe.ttf"));
         FreeTypeFontGenerator.FreeTypeFontParameter parameter = new FreeTypeFontGenerator.FreeTypeFontParameter();
@@ -144,28 +95,6 @@ public class GameScreen implements Screen {
 
         layout = new GlyphLayout();
     }
-
-    public void enemyHitCheck(Enemy enemy, Rectangle shot) {
-        if (enemy.getHitbox().overlaps(shot)) {
-            enemy.setHp(enemy.getHp() - 1);
-            if (enemy.getHp() <= 0) {
-                player.setScore(player.getScore() + 10);
-                System.out.println("Score: " + player.getScore());
-                enemy.deadCheck(batch, enemyKilled);
-            }
-            bulletShots.removeValue(shot, true); // Remove bullet yg kena
-        }
-    }
-
-    public void collusionCheck(Enemy enemy) {
-        if (player.getHitbox().overlaps(enemy.getHitbox())) {
-            player.setHp(player.getHp() - enemy.getHp());
-            System.out.println("Player hp: " + player.getHp());
-            enemy.setHp(0);
-            enemy.deadCheck(batch, enemyKilled);
-        }
-    }
-
 
     @Override
     public void render(float delta) {
@@ -220,7 +149,6 @@ public class GameScreen implements Screen {
 
             bullet.enemyMove(batch, x, y, (int) bullet.getHitbox().getWidth(), (int) bullet.getHitbox().getHeight());
 
-
             if (bullet.getyCoord() + 20 < 0) bulletDrops.removeIndex(i);
 
             if (bullet.getHitbox().overlaps(player.getHitbox())) {
@@ -235,7 +163,6 @@ public class GameScreen implements Screen {
         bomber1.enemyMoveShoot(batch);
         bomber2.enemyMoveShoot(batch);
 
-
         // Scout Bullet drop fire rate 0.5 sec 500000000
         if (TimeUtils.nanoTime() - lastDropBullet > 500000000) {
             spawnBulletDrop(scout1, scoutBullet, scout1.lockToPlayer(player));
@@ -248,61 +175,37 @@ public class GameScreen implements Screen {
         scout2.enemyMoveShoot(batch);
         scout3.enemyMoveShoot(batch);
 
-
         // Player shooting logic
         for (Rectangle shot : bulletShots) {
             batch.draw(upBullet, shot.x, shot.y);
 
-            enemyHitCheck(scout1, shot);
-            enemyHitCheck(scout2, shot);
-            enemyHitCheck(scout3, shot);
-            enemyHitCheck(bomber1, shot);
-            enemyHitCheck(bomber2, shot);
+            scout1.enemyHitCheck(player,shot,enemyKilled,batch,bulletShots);
+            scout2.enemyHitCheck(player,shot,enemyKilled,batch,bulletShots);
+            scout3.enemyHitCheck(player,shot,enemyKilled,batch,bulletShots);
+            bomber1.enemyHitCheck(player,shot,enemyKilled,batch,bulletShots);
+            bomber2.enemyHitCheck(player,shot,enemyKilled,batch,bulletShots);
         }
 
-
         // enemy and player tubruk logic
-        collusionCheck(scout1);
-        collusionCheck(scout2);
-        collusionCheck(scout3);
-        collusionCheck(bomber1);
-        collusionCheck(bomber2);
+        scout1.collusionCheck(player,enemyKilled,batch);
+        scout2.collusionCheck(player,enemyKilled,batch);
+        scout3.collusionCheck(player,enemyKilled,batch);
+        bomber1.collusionCheck(player,enemyKilled,batch);
+        bomber2.collusionCheck(player,enemyKilled,batch);
 
-
-        // Player dead logic
-        if (player.getHp() <= 0) {
-            System.out.println("Game Over");
+        // Player dead?
+        if (player.isGameOver()) {
             game.setScreen(new GameOverScreen(game));
             bgm.stop();
             dispose();
             return;
         }
 
-
-        // show hitbox (mempengaruhi display asset lain)
-//        player.hitboxCheck();
-//        scout1.hitboxCheck();
-//        scout2.hitboxCheck();
-//        scout3.hitboxCheck();
-//        bomber1.hitboxCheck();
-//        bomber2.hitboxCheck();
-
-
         // Player ship logic
-        if (Gdx.input.isTouched()) {
-            Vector3 touchPos = new Vector3();
-            touchPos.set((Gdx.input.getX()), Gdx.input.getY(), 0);
-            camera.unproject(touchPos);
-
-            player.getHitbox().x = (int) (touchPos.x - 50 / 2);
-            player.getHitbox().y = (int) (touchPos.y - 50 / 2);
-        }
+        player.playerMovement(camera);
 
         // Player move area restriction
-        if (player.getHitbox().x < 10) player.getHitbox().x = 10;
-        if (player.getHitbox().x > 600 - 54) player.getHitbox().x = 600 - 54;
-        if (player.getHitbox().y < 10) player.getHitbox().y = 10;
-        if (player.getHitbox().y > 900 - 64) player.getHitbox().y = 900 - 64;
+        player.playerMoveRestriction();
 
         if (TimeUtils.nanoTime() - lastUpTime > 150000000) {
             spawnBulletShot(player.getHitbox().x - 1, player.getHitbox().y + 40);
@@ -326,6 +229,43 @@ public class GameScreen implements Screen {
         batch.end();
     }
 
+    private void spawnBulletDrop(Enemy enemy, Bullet myBullet, int angle) {
+        Bullet bullet = bulletPool.obtain();
+        bullet.setImgAsset(String.valueOf(myBullet.getImgAsset()));
+        bullet.setHitbox(enemy.getMiddleX() - (int) myBullet.getImage().getWidth()/2, enemy.getMiddleY() , (int) myBullet.getImage().getWidth(), (int) myBullet.getImage().getHeight());
+        bullet.setImage((int) myBullet.getImage().getWidth(), (int) myBullet.getImage().getHeight());
+        bullet.setPosition((int) (enemy.getMiddleX() - myBullet.getImage().getWidth()/2), (int) (enemy.getMiddleY() - myBullet.getImage().getHeight()/2));        bullet.setDamage(myBullet.getDamage());
+
+        bullet.setAngle(angle);
+        bullet.setRotation(bullet.getAngle());
+
+        float radian = (float) Math.toRadians(angle - 90);
+        bullet.setBulletVelocityX((float) Math.cos(radian) * myBullet.getSpeed());
+        bullet.setBulletVelocityY((float) Math.sin(radian) * myBullet.getSpeed());
+
+        bullet.setBulletX(enemy.getMiddleX() - 5);
+        bullet.setBulletY(enemy.getMiddleY() - 5);
+
+        bulletDrops.add(bullet);
+
+        // Update lastDropTime for bomber enemies
+        if (enemy instanceof Bomber) {
+            lastDropBomb = TimeUtils.nanoTime();
+        } else if (enemy instanceof Scout) {
+            lastDropBullet = TimeUtils.nanoTime();
+        }
+    }
+    private void spawnBulletShot(float shotX, float shotY) {
+        Rectangle bulletShot = rectanglePool.obtain();
+        bulletShot.x = shotX;
+        bulletShot.y = shotY;
+        bulletShot.width = 10;
+        bulletShot.height = 10;
+
+        bulletShots.add(bulletShot);
+        lastUpTime = TimeUtils.nanoTime();
+    }
+
     @Override
     public void resize(int width, int height) {
     }
@@ -344,7 +284,6 @@ public class GameScreen implements Screen {
 
     @Override
     public void dispose() {
-        dropBullet.dispose();
         upBullet.dispose();
         AutoCannon.dispose();
         batch.dispose();
